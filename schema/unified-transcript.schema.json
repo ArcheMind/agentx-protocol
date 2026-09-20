@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ArcheMind/agentx-protocol/schema/unified-transcript.schema.json",
+  "title": "AgentX Unified Transcript",
+  "type": "object",
+  "required": ["id", "provider", "messages"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "provider": { "type": "string", "minLength": 1 },
+    "isSubagent": { "type": "boolean", "default": false },
+    "workspace": { "type": "string" },
+    "title": { "type": "string" },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "messageCount": { "type": "integer" },
+    "source": { "type": "string" },
+    "messages": { "type": "array", "items": { "$ref": "#/$defs/message" } }
+  },
+  "$defs": {
+    "message": {
+      "type": "object",
+      "required": ["id", "role", "content"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "parentId": { "type": ["string", "null"] },
+        "role": { "enum": ["user", "assistant", "tool"] },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/contentBlock" } },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "model": { "type": "string" },
+        "stopReason": { "type": "string" },
+        "toolUseId": { "type": "string", "minLength": 1 },
+        "toolName": { "type": "string", "minLength": 1 },
+        "isError": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "role": { "const": "tool" } } },
+          "then": {
+            "required": ["toolUseId", "toolName"],
+            "properties": {
+              "content": { "type": "array", "items": { "$ref": "#/$defs/textBlock" } }
+            }
+          },
+          "else": {
+            "properties": {
+              "toolUseId": false,
+              "toolName": false,
+              "isError": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "role": { "const": "user" } } },
+          "then": {
+            "properties": {
+              "content": { "type": "array", "items": { "$ref": "#/$defs/textBlock" } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "role": { "enum": ["user", "tool"] } } },
+          "then": {
+            "properties": {
+              "model": false,
+              "stopReason": false
+            }
+          }
+        }
+      ]
+    },
+    "textBlock": {
+      "type": "object",
+      "required": ["type", "text"],
+      "properties": {
+        "type": { "const": "text" },
+        "text": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "thinkingBlock": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "thinking" },
+        "text": { "type": "string", "default": "" },
+        "signature": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "toolUseBlock": {
+      "type": "object",
+      "required": ["type", "id", "name"],
+      "properties": {
+        "type": { "const": "tool_use" },
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "input": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "contentBlock": {
+      "oneOf": [
+        { "$ref": "#/$defs/textBlock" },
+        { "$ref": "#/$defs/thinkingBlock" },
+        { "$ref": "#/$defs/toolUseBlock" }
+      ]
+    }
+  }
+}

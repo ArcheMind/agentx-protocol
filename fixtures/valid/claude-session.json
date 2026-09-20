@@ -1,0 +1,46 @@
+{
+  "id": "sess-claude-1",
+  "provider": "claude",
+  "workspace": "/tmp/demo",
+  "title": "fix the failing test",
+  "startedAt": "2026-09-20T05:00:00.000000000Z",
+  "updatedAt": "2026-09-20T05:01:00.000000000Z",
+  "messageCount": 4,
+  "source": "/home/u/.claude/projects/demo/sess.jsonl",
+  "messages": [
+    {
+      "id": "m1",
+      "parentId": null,
+      "role": "user",
+      "content": [{ "type": "text", "text": "fix the failing test" }],
+      "timestamp": "2026-09-20T05:00:00.000000000Z"
+    },
+    {
+      "id": "m2",
+      "parentId": "m1",
+      "role": "assistant",
+      "model": "claude-fable-5",
+      "stopReason": "tool_use",
+      "content": [
+        { "type": "thinking", "text": "look at the test first", "signature": "sig-abc" },
+        { "type": "text", "text": "Running the suite." },
+        { "type": "tool_use", "id": "tu1", "name": "Bash", "input": { "command": "make test" } }
+      ]
+    },
+    {
+      "id": "m3",
+      "parentId": "m2",
+      "role": "tool",
+      "toolUseId": "tu1",
+      "toolName": "Bash",
+      "isError": true,
+      "content": [{ "type": "text", "text": "1 test failed" }]
+    },
+    {
+      "id": "m4",
+      "parentId": "m3",
+      "role": "assistant",
+      "content": [{ "type": "text", "text": "Fixed." }]
+    }
+  ]
+}

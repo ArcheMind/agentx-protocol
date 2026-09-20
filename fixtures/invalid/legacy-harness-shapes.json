@@ -1,0 +1,28 @@
+{
+  "reason": "legacy chill-harness shapes must be rejected: string assistant content, tool-call block, embedded tool-result block",
+  "session": {
+    "id": "sess-legacy",
+    "provider": "someone-harness",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "assistant",
+        "content": "plain string content is not allowed"
+      },
+      {
+        "id": "m2",
+        "role": "assistant",
+        "content": [
+          { "type": "tool-call", "toolCallId": "tc1", "toolName": "Bash", "input": {} }
+        ]
+      },
+      {
+        "id": "m3",
+        "role": "tool",
+        "content": [
+          { "type": "tool-result", "toolCallId": "tc1", "toolName": "Bash", "output": { "type": "text", "value": "done" } }
+        ]
+      }
+    ]
+  }
+}

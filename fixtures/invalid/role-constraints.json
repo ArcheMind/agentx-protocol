@@ -1,0 +1,33 @@
+{
+  "reason": "role-level constraints: tool without toolUseId/toolName, user with tool_use block, isError outside tool, model on tool",
+  "session": {
+    "id": "sess-roles",
+    "provider": "claude",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "tool",
+        "content": [{ "type": "text", "text": "orphan result" }]
+      },
+      {
+        "id": "m2",
+        "role": "user",
+        "content": [{ "type": "tool_use", "id": "tu1", "name": "Bash", "input": {} }]
+      },
+      {
+        "id": "m3",
+        "role": "assistant",
+        "isError": true,
+        "content": [{ "type": "text", "text": "hi" }]
+      },
+      {
+        "id": "m4",
+        "role": "tool",
+        "toolUseId": "tu1",
+        "toolName": "Bash",
+        "model": "claude-fable-5",
+        "content": [{ "type": "text", "text": "out" }]
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "reason": "structural: duplicate message ids, missing id, unknown role, unknown block type, tool_use without id",
+  "session": {
+    "id": "sess-structural",
+    "provider": "codex",
+    "messages": [
+      {
+        "id": "dup",
+        "role": "user",
+        "content": [{ "type": "text", "text": "a" }]
+      },
+      {
+        "id": "dup",
+        "role": "user",
+        "content": [{ "type": "text", "text": "b" }]
+      },
+      {
+        "role": "user",
+        "content": [{ "type": "text", "text": "no id" }]
+      },
+      {
+        "id": "m4",
+        "role": "system",
+        "content": []
+      },
+      {
+        "id": "m5",
+        "role": "assistant",
+        "content": [{ "type": "banner", "text": "x" }]
+      },
+      {
+        "id": "m6",
+        "role": "assistant",
+        "content": [{ "type": "tool_use", "name": "Bash" }]
+      }
+    ]
+  }
+}
