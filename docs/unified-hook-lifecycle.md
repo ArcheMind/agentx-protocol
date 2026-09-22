@@ -1,5 +1,8 @@
 # Unified Hook Lifecycle
 
+用户侧文件格式和 command I/O 见
+[Unified Hook Configuration](unified-hook-configuration.md)。
+
 只保留 Session 和 Turn 两级是可行的，而且四家都能稳定映射。
 
 ```text
