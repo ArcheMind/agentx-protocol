@@ -5,6 +5,7 @@ and downstream consumers (e.g. the chill Someone Agent Harness).
 
 - **Transcript spec**: [docs/unified-transcript-format.md](docs/unified-transcript-format.md)
 - **Hook lifecycle spec**: [docs/unified-hook-lifecycle.md](docs/unified-hook-lifecycle.md)
+- **Hook configuration spec**: [docs/unified-hook-configuration.md](docs/unified-hook-configuration.md)
 - **Normative schema**: [schema/unified-transcript.schema.json](schema/unified-transcript.schema.json)
 - **Go**: `github.com/ArcheMind/agentx-protocol/transcript`
 - **TypeScript**: npm package `agentx-protocol` (install from git, pinned to a commit)
