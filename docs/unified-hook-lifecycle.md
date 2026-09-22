@@ -175,38 +175,13 @@ duration_ms?
 - 验证结果是否满足外部策略。
 - 返回用户可见反馈。
 
-基础公共输出：
+公共输出：
 
 ```text
 system_message?
 ```
 
-可选扩展能力：
-
-```text
-decision            # accept | continue
-reason?
-additional_context?
-```
-
-但 `continue` 不能列为四家共同保证：
-
-- Claude：`Stop` 可阻止停止并继续。
-- Codex：`Stop` 可要求继续。
-- Gemini：`AfterAgent` 可 retry/halt。
-- Pi：`agent_settled` 是最终通知，没有等价的原生返回值继续当前 run。
-
-因此应标注：
-
-```text
-turn.after.continue:
-  claude: supported
-  codex: supported
-  gemini: supported
-  pi: unsupported
-```
-
-不能把 Pi 的主动 `sendMessage()` 包装成相同能力；那会创建新输入，而不是继续原 Turn。
+继续执行、重试或创建新输入不是四家共同能力，不进入公共协议；这些能力保留在各 Agent 的原生扩展层。
 
 ## 建议的最小公共协议
 
@@ -228,12 +203,12 @@ turn.before
 turn.after
   observe
   side_effect
-  continue?          # capability-gated
+  system_message
 ```
 
 最重要的限制：
 
 - Session Hook 不参与决策，只负责初始化和清理。
 - Turn Before 是统一策略入口。
-- Turn After 默认只观察；继续执行属于可选能力。
+- Turn After 只观察、执行副作用并可返回用户可见反馈。
 - Prompt 改写、system prompt 改写、模型调用、工具调用全部留在原生扩展层，不进入统一 Hooks。
