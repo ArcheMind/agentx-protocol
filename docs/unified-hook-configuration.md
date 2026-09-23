@@ -1,7 +1,8 @@
 # Unified Hook Configuration
 
 本文定义 Agent X Protocol 的用户侧 Hook 配置。生命周期和能力边界由
-[Unified Hook Lifecycle](unified-hook-lifecycle.md) 定义。
+[Unified Hook Lifecycle](unified-hook-lifecycle.md) 定义；所有实现同时遵守
+[Unified Integration Principles](unified-integration-principles.md)。
 
 ## 设计原则
 
@@ -28,8 +29,8 @@ Agent X 不发明新的 Hook DSL。用户配置采用 Claude Code 与 Codex 已�
 两个文件同时存在时，其匹配 Hook 全部生效；项目文件不会覆盖用户文件。Hook
 之间不得依赖执行顺序。
 
-工具也可以显式读取已有的 Claude/Codex `hooks.json`。其内容不需要改写成另一种
-格式。
+文件内容兼容 Claude/Codex `hooks.json`，但只有上述 Agent X 规范位置属于统一层的
+事实源。原生 Provider 配置继续由原生 Provider 管理。
 
 ## 配置结构
 
@@ -114,7 +115,7 @@ Agent X 不发明新的 Hook DSL。用户配置采用 Claude Code 与 Codex 已�
 - `SessionEnd` 的 matcher 匹配公共 `reason`。
 - `UserPromptSubmit` 和 `Stop` 不提供公共 matcher subject；其 `matcher` 被忽略并产生 warning。
 - 为保证跨运行时一致，portable matcher 应只使用字面值、`|`、`^`、`$` 和 `.*`。
-  更复杂但原生合法的正则可以保留，但属于 native-only 配置。
+  更复杂但原生合法的正则可以保留，但不参与跨 Agent 投影。
 
 ### Command handler
 
@@ -257,14 +258,13 @@ Provider 可以附加字段。portable Hook 必须忽略不认识的输入字段
 |---|---|
 | 未知或非公共事件 | warning；不跨 Agent 执行 |
 | 非 `command` handler | warning；不跨 Agent 执行 |
-| 复杂 matcher | warning；只在明确支持它的原生目标透传 |
+| 复杂 matcher | warning；不跨 Agent 执行对应 matcher group |
 | 额外的纯元数据字段 | warning；公共适配器忽略 |
-| 改变执行语义的字段，例如 `async` | warning；只在明确支持它的原生目标透传，其他目标跳过该 handler |
+| 改变执行语义的字段，例如 `async` | warning；不跨 Agent 执行对应 handler |
 | 公共事件中的非公共输出能力 | warning；忽略该能力，不影响同一输出中的公共字段 |
 
-当目标 Agent 原生支持超出项时，Agent X 可以原样透传；这属于 native-only 行为，不得
-被报告为跨 Agent 能力。无法透传时只跳过对应事件或 handler，不跳过同一文件中的其他
-公共 Hook。
+Agent X 不实现通用 native passthrough。原生能力由原生 Provider 配置管理。跳过超出项时，
+同一文件中的其他公共 Hook 仍然有效。
 
 无效 JSON、缺少 `hooks`、空 `command`、非正数 `timeout` 等不是“超出公共 profile”，
 而是无效配置，必须报错。
@@ -278,3 +278,16 @@ Provider 可以附加字段。portable Hook 必须忽略不认识的输入字段
   `before_agent_start` 注入其 `additionalContext`，`agent_settled` 实现公共 `Stop`。
 
 适配器不得用一个新 Turn 模拟当前 Turn 的继续执行，也不得把原生扩展能力伪装成公共能力。
+
+## 投影所有权
+
+Agent X 只从规范位置向 Provider 生成单向投影。投影必须位于实现能够明确识别为
+AgentX-owned 的独立 artifact 中。
+
+- 不修改或覆盖用户已有的原生 Hook。
+- 不从 Provider artifact 反向同步规范配置。
+- 不静态分析任意原生插件或扩展来补全统一 inventory。
+- 无法安全创建独立 artifact 时必须报错，不能猜测合并。
+
+预期用户体验见
+[Unified Hook Implementation Example](unified-hook-implementation-example.md)。

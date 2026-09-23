@@ -1,11 +1,13 @@
 # agentx-protocol
 
-Unified transcript format shared by [agentx](https://github.com/ArcheMind/agentx)
-and downstream consumers (e.g. the chill Someone Agent Harness).
+Shared formats and portable integration contracts for
+[agentx](https://github.com/ArcheMind/agentx) and downstream consumers.
 
+- **Integration principles**: [docs/unified-integration-principles.md](docs/unified-integration-principles.md)
 - **Transcript spec**: [docs/unified-transcript-format.md](docs/unified-transcript-format.md)
 - **Hook lifecycle spec**: [docs/unified-hook-lifecycle.md](docs/unified-hook-lifecycle.md)
 - **Hook configuration spec**: [docs/unified-hook-configuration.md](docs/unified-hook-configuration.md)
+- **Hook implementation example**: [docs/unified-hook-implementation-example.md](docs/unified-hook-implementation-example.md)
 - **Normative schema**: [schema/unified-transcript.schema.json](schema/unified-transcript.schema.json)
 - **Go**: `github.com/ArcheMind/agentx-protocol/transcript`
 - **TypeScript**: npm package `agentx-protocol` (install from git, pinned to a commit)
