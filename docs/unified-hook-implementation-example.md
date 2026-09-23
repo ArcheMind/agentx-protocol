@@ -127,6 +127,7 @@ warning: PreToolUse is outside the portable hook profile and was not projected
 - 删除 AgentX artifact 不影响用户原生配置。
 - 相同规范输入重复生成相同外部行为。
 - `PreToolUse` 不出现在任何跨 Agent 投影中。
+- `SessionEnd.timeout` 大于 `3` 的 handler 不出现在跨 Agent 投影中，并产生 warning。
 
 如果 Provider 不能在不覆盖用户数据的情况下创建独立 artifact，该 Provider 的投影失败，
 并向用户报告错误；实现不能退化为修改未知所有权的配置。

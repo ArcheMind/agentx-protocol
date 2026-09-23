@@ -133,13 +133,17 @@ Agent X 不发明新的 Hook DSL。用户配置采用 Claude Code 与 Codex 已�
 |---|---|---|
 | `type` | 必须为 `command` | 执行外部命令 |
 | `command` | 必填非空字符串 | 与 Claude/Codex 相同的 shell command |
-| `timeout` | 可选正数 | 秒；从进程启动到退出的总时限 |
+| `timeout` | 可选正数 | 秒；从进程启动到退出的总时限。`SessionEnd` 的 portable 值最大为 `3` |
 
 命令以 session 的 `cwd` 作为工作目录。stdin 是一个 JSON 对象；stdout 只能是空输出、
 纯文本或一个 JSON 对象。诊断日志必须写入 stderr。
 
 同一事件的多个匹配 handler 可能并发执行。配置不得依赖声明顺序，也不得依赖另一个
 handler 先完成。
+
+`SessionEnd.timeout` 大于 `3` 是合法的原生配置，但超出 portable profile：Agent X
+产生 warning，且不跨 Agent 投影该 handler。这个限制来自公共目标中最短的可靠清理窗口；
+`session.end` 本身仍然是 best-effort，不应承担强一致任务。
 
 ## 命令输入
 
