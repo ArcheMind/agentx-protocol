@@ -1,7 +1,7 @@
 {
   "name": "agentx-protocol",
   "version": "0.1.0",
-  "description": "Unified transcript format: spec, schema, and Go/TypeScript implementations",
+  "description": "Unified transcript format — TypeScript implementation",
   "license": "MIT",
   "repository": "github:ArcheMind/agentx-protocol",
   "type": "module",
@@ -14,9 +14,7 @@
     }
   },
   "files": [
-    "dist",
-    "schema",
-    "docs"
+    "dist"
   ],
   "scripts": {
     "build": "tsc",

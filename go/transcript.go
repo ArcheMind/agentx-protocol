@@ -1,7 +1,7 @@
 // Package transcript defines the unified transcript format shared by agentx
 // and downstream consumers. The normative spec lives in
 // docs/unified-transcript-format.md and schema/unified-transcript.schema.json.
-package transcript
+package agentx
 
 import (
 	"errors"

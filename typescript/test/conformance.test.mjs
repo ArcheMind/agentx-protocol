@@ -7,16 +7,16 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { validateSession } from "../dist/index.js";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const schema = JSON.parse(readFileSync(join(root, "schema", "unified-transcript.schema.json"), "utf8"));
+const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const schema = JSON.parse(readFileSync(join(root, "spec", "schema", "unified-transcript.schema.json"), "utf8"));
 const ajv = new Ajv2020.default({ strict: false, allErrors: true });
 addFormats.default(ajv);
 const schemaValidate = ajv.compile(schema);
 
 const fixtures = (kind) =>
-  readdirSync(join(root, "fixtures", kind))
+  readdirSync(join(root, "spec", "fixtures", kind))
     .filter((name) => name.endsWith(".json"))
-    .map((name) => [name, JSON.parse(readFileSync(join(root, "fixtures", kind, name), "utf8"))]);
+    .map((name) => [name, JSON.parse(readFileSync(join(root, "spec", "fixtures", kind, name), "utf8"))]);
 
 for (const [name, session] of fixtures("valid")) {
   test(`valid/${name}: validator accepts`, () => {

@@ -1,4 +1,4 @@
-package transcript
+package agentx
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 
 func fixturePaths(t *testing.T, kind string) []string {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join("..", "fixtures", kind, "*.json"))
+	paths, err := filepath.Glob(filepath.Join("..", "spec", "fixtures", kind, "*.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

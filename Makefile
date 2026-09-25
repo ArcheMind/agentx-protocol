@@ -3,8 +3,7 @@
 test: test-go test-ts
 
 test-go:
-	go test ./...
+	cd go && go test ./...
 
 test-ts:
-	npm install
-	npm test
+	cd typescript && npm install && npm test
