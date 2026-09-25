@@ -1,0 +1,24 @@
+{
+  "name": "agentx-protocol",
+  "version": "0.1.0",
+  "description": "Unified transcript format: spec, schema, and language implementations",
+  "license": "MIT",
+  "repository": "github:ArcheMind/agentx-protocol",
+  "type": "module",
+  "main": "./typescript/dist/index.js",
+  "types": "./typescript/dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./typescript/dist/index.d.ts",
+      "default": "./typescript/dist/index.js"
+    }
+  },
+  "files": [
+    "typescript/dist"
+  ],
+  "scripts": {
+    "build": "cd typescript && npm run build",
+    "prepare": "cd typescript && npm install && npm run build",
+    "test": "cd typescript && npm test"
+  }
+}
