@@ -38,6 +38,7 @@ type Message struct {
 	Content    []ContentBlock `json:"content,omitempty" yaml:"content,omitempty"`
 	Result     any            `json:"result,omitempty" yaml:"result,omitempty"`
 	Timestamp  string         `json:"timestamp,omitempty" yaml:"timestamp,omitempty"`
+	RecordedAt string         `json:"recordedAt,omitempty" yaml:"recordedAt,omitempty"`
 	Model      string         `json:"model,omitempty" yaml:"model,omitempty"`
 	StopReason string         `json:"stopReason,omitempty" yaml:"stopReason,omitempty"`
 	ToolUseID  string         `json:"toolUseId,omitempty" yaml:"toolUseId,omitempty"`
