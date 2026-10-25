@@ -1,0 +1,133 @@
+{
+  "id": "sess-v02-shapes",
+  "provider": "claude",
+  "messageCount": 8,
+  "messages": [
+    {
+      "id": "s1",
+      "parentId": null,
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "You are a coding agent."
+        }
+      ]
+    },
+    {
+      "id": "u1",
+      "parentId": "s1",
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "what is in this screenshot?"
+        },
+        {
+          "type": "image",
+          "source": {
+            "type": "base64",
+            "media_type": "image/png",
+            "data": "iVBORw0KGgo="
+          }
+        }
+      ]
+    },
+    {
+      "id": "a1",
+      "parentId": "u1",
+      "role": "assistant",
+      "model": "claude-fable-5",
+      "stopReason": "tool_use",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "tu1",
+          "name": "Bash",
+          "input": {
+            "command": "ls"
+          }
+        },
+        {
+          "type": "tool_use",
+          "id": "tu2",
+          "name": "Read",
+          "input": {
+            "path": "a.txt"
+          }
+        },
+        {
+          "type": "tool_use",
+          "id": "tu3",
+          "name": "Fetch",
+          "input": {}
+        },
+        {
+          "type": "tool_use",
+          "id": "tu4",
+          "name": "Noop",
+          "input": {}
+        }
+      ]
+    },
+    {
+      "id": "t1",
+      "parentId": "a1",
+      "role": "tool",
+      "toolUseId": "tu1",
+      "toolName": "Bash",
+      "result": "a.txt\nb.txt"
+    },
+    {
+      "id": "t2",
+      "parentId": "t1",
+      "role": "tool",
+      "toolUseId": "tu2",
+      "toolName": "Read",
+      "result": [
+        {
+          "type": "text",
+          "text": "hello"
+        },
+        {
+          "type": "image",
+          "source": {
+            "type": "base64",
+            "media_type": "image/png",
+            "data": "iVBORw0KGgo="
+          }
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "parentId": "t2",
+      "role": "tool",
+      "toolUseId": "tu3",
+      "toolName": "Fetch",
+      "isError": true,
+      "result": {
+        "status": 500,
+        "body": "boom"
+      }
+    },
+    {
+      "id": "t4",
+      "parentId": "t3",
+      "role": "tool",
+      "toolUseId": "tu4",
+      "toolName": "Noop"
+    },
+    {
+      "id": "a2",
+      "parentId": "t4",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Done."
+        }
+      ]
+    }
+  ]
+}

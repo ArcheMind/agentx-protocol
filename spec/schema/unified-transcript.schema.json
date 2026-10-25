@@ -19,12 +19,13 @@
   "$defs": {
     "message": {
       "type": "object",
-      "required": ["id", "role", "content"],
+      "required": ["id", "role"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "parentId": { "type": ["string", "null"] },
-        "role": { "enum": ["user", "assistant", "tool"] },
+        "role": { "enum": ["user", "assistant", "tool", "system"] },
         "content": { "type": "array", "items": { "$ref": "#/$defs/contentBlock" } },
+        "result": {},
         "timestamp": { "type": "string", "format": "date-time" },
         "model": { "type": "string" },
         "stopReason": { "type": "string" },
@@ -38,11 +39,15 @@
           "then": {
             "required": ["toolUseId", "toolName"],
             "properties": {
-              "content": { "type": "array", "items": { "$ref": "#/$defs/textBlock" } }
+              "content": false,
+              "model": false,
+              "stopReason": false
             }
           },
           "else": {
+            "required": ["content"],
             "properties": {
+              "result": false,
               "toolUseId": false,
               "toolName": false,
               "isError": false
@@ -53,14 +58,42 @@
           "if": { "properties": { "role": { "const": "user" } } },
           "then": {
             "properties": {
-              "content": { "type": "array", "items": { "$ref": "#/$defs/textBlock" } }
+              "content": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    { "$ref": "#/$defs/textBlock" },
+                    { "$ref": "#/$defs/imageBlock" }
+                  ]
+                }
+              },
+              "model": false,
+              "stopReason": false
             }
           }
         },
         {
-          "if": { "properties": { "role": { "enum": ["user", "tool"] } } },
+          "if": { "properties": { "role": { "const": "assistant" } } },
           "then": {
             "properties": {
+              "content": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    { "$ref": "#/$defs/textBlock" },
+                    { "$ref": "#/$defs/thinkingBlock" },
+                    { "$ref": "#/$defs/toolUseBlock" }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "role": { "const": "system" } } },
+          "then": {
+            "properties": {
+              "content": { "type": "array", "items": { "$ref": "#/$defs/textBlock" } },
               "model": false,
               "stopReason": false
             }
@@ -98,9 +131,19 @@
       },
       "additionalProperties": false
     },
+    "imageBlock": {
+      "type": "object",
+      "required": ["type", "source"],
+      "properties": {
+        "type": { "const": "image" },
+        "source": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
     "contentBlock": {
       "oneOf": [
         { "$ref": "#/$defs/textBlock" },
+        { "$ref": "#/$defs/imageBlock" },
         { "$ref": "#/$defs/thinkingBlock" },
         { "$ref": "#/$defs/toolUseBlock" }
       ]

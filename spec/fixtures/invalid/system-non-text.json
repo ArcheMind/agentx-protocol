@@ -1,0 +1,19 @@
+{
+  "reason": "system messages allow only text blocks",
+  "session": {
+    "id": "sess-system-non-text",
+    "provider": "claude",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "system",
+        "content": [
+          {
+            "type": "image",
+            "source": {}
+          }
+        ]
+      }
+    ]
+  }
+}

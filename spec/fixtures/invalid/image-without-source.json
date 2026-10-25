@@ -1,0 +1,18 @@
+{
+  "reason": "image block requires source",
+  "session": {
+    "id": "sess-image-without-source",
+    "provider": "claude",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "content": [
+          {
+            "type": "image"
+          }
+        ]
+      }
+    ]
+  }
+}

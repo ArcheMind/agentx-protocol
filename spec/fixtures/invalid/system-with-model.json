@@ -1,0 +1,20 @@
+{
+  "reason": "system messages must not carry model",
+  "session": {
+    "id": "sess-system-with-model",
+    "provider": "claude",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "system",
+        "model": "claude-fable-5",
+        "content": [
+          {
+            "type": "text",
+            "text": "sys"
+          }
+        ]
+      }
+    ]
+  }
+}

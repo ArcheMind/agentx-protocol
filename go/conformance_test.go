@@ -64,3 +64,31 @@ func TestInvalidFixtures(t *testing.T) {
 		})
 	}
 }
+
+// Tool messages must serialize without "content"; every other role must keep
+// it, even when empty, since the schema requires it there.
+func TestMarshalContentPresence(t *testing.T) {
+	for _, path := range fixturePaths(t, "valid") {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var session Session
+		if err := json.Unmarshal(data, &session); err != nil {
+			t.Fatal(err)
+		}
+		for _, message := range session.Messages {
+			out, err := json.Marshal(message)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var raw map[string]json.RawMessage
+			if err := json.Unmarshal(out, &raw); err != nil {
+				t.Fatal(err)
+			}
+			if _, has := raw["content"]; has == (message.Role == RoleTool) {
+				t.Fatalf("%s: message %s role %s: content presence wrong in %s", path, message.ID, message.Role, out)
+			}
+		}
+	}
+}

@@ -1,0 +1,21 @@
+{
+  "reason": "tool message must not carry content blocks",
+  "session": {
+    "id": "sess-tool-with-content",
+    "provider": "claude",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "tool",
+        "toolUseId": "tu1",
+        "toolName": "Bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "old text-flattened output"
+          }
+        ]
+      }
+    ]
+  }
+}
