@@ -72,6 +72,16 @@ means empty output. `content` must be absent on tool messages, and `result`
 must be absent on every other role. Consumers needing plain text derive it
 from `result` themselves; the format does not flatten it.
 
+**Materialization.** When a serializer writes a `role:"tool"` message into a
+destination's native format, it writes `result` verbatim if the destination's
+native format accepts that shape. Otherwise it writes the text projection of
+`result`: for a block array, the `text` fields of its items joined with `\n`;
+for any other non-string value, its compact JSON. The unified `result` itself
+is never altered by this rule; it applies only on the way out. Native shapes
+per destination: Claude `tool_result.content` accepts a string or an array of
+`text`/`image` blocks; Codex `output` accepts a string; Pi `content` accepts
+an array of `text`/`image` blocks (a string is wrapped as one `text` block).
+
 ### Causal chain
 
 `parentId` links each message to its causal predecessor, forming a linear
@@ -136,7 +146,7 @@ Source: `~/.claude/projects/*/*.jsonl`
 | `type:"assistant"` event, `content[].type:"thinking"` | `thinking` block |
 | `type:"assistant"` event, `content[].type:"text"` | `text` block |
 | `type:"assistant"` event, `content[].type:"tool_use"` | `tool_use` block |
-| `type:"user"` event with `tool_result` content | Split to `role:"tool"` message; `tool_use_id` → `toolUseId`; `is_error` → `isError`; `tool_result.content` (string or block array) → `result` verbatim |
+| `type:"user"` event with `tool_result` content | Split to `role:"tool"` message; `tool_use_id` → `toolUseId`; `is_error` → `isError`; `tool_result.content` (string or block array) → `result` verbatim; on serialization `result` → `tool_result.content` per the materialization rule (verbatim if a string or `text`/`image` block array, else text projection) |
 | `type:"user"` event without `tool_result` | `role:"user"` message |
 | `type:"user"` event, `content[].type:"image"` | `image` block; `source` verbatim |
 | `type:"system"` record with text content | `role:"system"` message, `text` block |
@@ -144,7 +154,7 @@ Source: `~/.claude/projects/*/*.jsonl`
 | `stop_reason` | `stopReason` field |
 | `parentUuid` | `parentId` |
 
-Serialization reverses each row (`result` → `tool_result.content`, `image` →
+Serialization reverses each row (`result` → `tool_result.content` per the materialization rule, `image` →
 native `image`, `role:"system"` → native `type:"system"` record).
 
 ### Codex CLI
@@ -157,8 +167,8 @@ Source: `~/.codex/sessions/*/*/*/*/*.jsonl`
 | `response_item` with `payload.type:"message"`, `role:"assistant"` | `role:"assistant"` message; `output_text` → `text` blocks |
 | `response_item` with `payload.type:"function_call"` | `tool_use` block appended to preceding assistant message; `arguments` (JSON string) → `input` (parsed object) |
 | `response_item` with `payload.type:"custom_tool_call"` | `tool_use` block appended to preceding assistant message; `input` (JSON string) → parsed object; unparseable → `{"raw": <string>}` |
-| `response_item` with `payload.type:"function_call_output"` | `role:"tool"` message; `call_id` → `toolUseId`; `name` from matched function_call; `output` → string `result` |
-| `response_item` with `payload.type:"custom_tool_call_output"` | `role:"tool"` message; `call_id` → `toolUseId`; `name` from matched custom_tool_call; `output` → string `result` |
+| `response_item` with `payload.type:"function_call_output"` | `role:"tool"` message; `call_id` → `toolUseId`; `name` from matched function_call; `output` → `result` verbatim (string, or a content-item array as emitted by codex); on serialization `result` → `output` per the materialization rule (verbatim if a string, else text projection) |
+| `response_item` with `payload.type:"custom_tool_call_output"` | `role:"tool"` message; `call_id` → `toolUseId`; `name` from matched custom_tool_call; `output` → `result` verbatim (string, or a content-item array as emitted by codex); on serialization per the materialization rule |
 | `response_item` with `payload.type:"reasoning"` | `thinking` block; summary text → `text` (may be empty); `encrypted_content` → `signature` |
 | `response_item` with `payload.type:"message"`, `role:"developer"` | `role:"system"` message; `input_text` blocks → `text` blocks |
 | `ordinal` | Ordering tiebreak; not mapped to `parentId` (derive from sequence) |
