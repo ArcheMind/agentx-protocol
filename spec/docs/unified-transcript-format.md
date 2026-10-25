@@ -45,7 +45,8 @@ instruction records are `role: "system"` messages.
   "role": "user | assistant | tool | system",
   "content": [ "...ContentBlock[] (forbidden for role=tool)" ],
   "result": "any JSON value (optional, tool only; the provider's output, verbatim)",
-  "timestamp": "RFC3339Nano UTC",
+  "timestamp": "RFC3339Nano UTC (event time)",
+  "recordedAt": "RFC3339Nano UTC (optional; record write time, when it differs from timestamp)",
   "model": "string (optional, assistant only)",
   "stopReason": "string (optional, assistant only)",
   "toolUseId": "string (required for role=tool, references a tool_use block id)",
@@ -163,7 +164,7 @@ Source: `~/.codex/sessions/*/*/*/*/*.jsonl`
 
 | Native | Unified |
 |---|---|
-| `response_item` with `payload.type:"message"`, `role:"user"` | `role:"user"` message; `input_text` blocks → `text` blocks |
+| `response_item` with `payload.type:"message"`, `role:"user"` | `role:"user"` message; `input_text` blocks → `text` blocks; `input_image` blocks → `image` blocks (`image_url` data-URI → `source.{type,media_type,data}`) |
 | `response_item` with `payload.type:"message"`, `role:"assistant"` | `role:"assistant"` message; `output_text` → `text` blocks |
 | `response_item` with `payload.type:"function_call"` | `tool_use` block appended to preceding assistant message; `arguments` (JSON string) → `input` (parsed object) |
 | `response_item` with `payload.type:"custom_tool_call"` | `tool_use` block appended to preceding assistant message; `input` (JSON string) → parsed object; unparseable → `{"raw": <string>}` |
@@ -177,6 +178,14 @@ Source: `~/.codex/sessions/*/*/*/*/*.jsonl`
 When serializing a `tool_use` block, the choice between a `function_call` and
 a `custom_tool_call` record is provider-implementation-defined (name-based).
 The spec requires only that a same-provider round-trip preserves it.
+
+**Reasoning attribution on serialization.** A unified assistant message may
+interleave `thinking`, `text` and `tool_use` blocks. Codex represents each as
+an independent `response_item` record. Serialization walks blocks in order:
+consecutive `text` blocks accumulate into one `message` record; a `thinking`
+block flushes accumulated text, then emits a `reasoning` record; a `tool_use`
+block flushes text, then emits a `function_call`/`custom_tool_call` record.
+This preserves the original interleaving without introducing extra messages.
 
 ### Gemini CLI
 
