@@ -35,14 +35,16 @@ one commit — then consumers upgrade their pinned version.
 ## Message
 
 Each message is one event in the conversation. Tool results are independent
-messages with `role: "tool"`, never disguised as `role: "user"`.
+messages with `role: "tool"`, never disguised as `role: "user"`. Provider
+instruction records are `role: "system"` messages.
 
 ```json
 {
   "id": "string",
   "parentId": "string | null",
-  "role": "user | assistant | tool",
-  "content": [ "...ContentBlock[]" ],
+  "role": "user | assistant | tool | system",
+  "content": [ "...ContentBlock[] (forbidden for role=tool)" ],
+  "result": "any JSON value (optional, tool only; the provider's output, verbatim)",
   "timestamp": "RFC3339Nano UTC",
   "model": "string (optional, assistant only)",
   "stopReason": "string (optional, assistant only)",
@@ -56,9 +58,19 @@ messages with `role: "tool"`, never disguised as `role: "user"`.
 
 | Role | Meaning |
 |---|---|
-| `user` | Human input. Only `text` blocks. |
+| `user` | Human input. `text` and `image` blocks. |
 | `assistant` | Model output. May contain text, thinking, and tool_use blocks. |
-| `tool` | Tool execution result. Only `text` blocks. Links back to a tool_use block via `toolUseId`; `isError: true` marks a failed execution. |
+| `tool` | Tool execution result. `result` carries the provider's output value verbatim; a bare string is the common case. No content blocks. Links back to a tool_use block via `toolUseId`; `isError: true` marks a failed execution. |
+| `system` | Provider-level instruction record. Only `text` blocks. Must not carry `model`, `stopReason`, `toolUseId`, `toolName`, `isError` or `result`. |
+
+### Tool result
+
+`result` is any JSON value, passed through untouched from the provider: a
+string for providers with string outputs, an array or object where the
+provider emits structured output (e.g. a block array). It is optional; absent
+means empty output. `content` must be absent on tool messages, and `result`
+must be absent on every other role. Consumers needing plain text derive it
+from `result` themselves; the format does not flatten it.
 
 ### Causal chain
 
@@ -73,6 +85,16 @@ Content is an ordered array of typed blocks. The `type` field discriminates.
 
 ```json
 { "type": "text", "text": "string" }
+```
+
+### image
+
+Image input. `source` is a free-form object carried verbatim from the
+provider (passthrough); the format defines no fields inside it. Only inside
+`user` messages.
+
+```json
+{ "type": "image", "source": { "type": "base64", "media_type": "image/png", "data": "..." } }
 ```
 
 ### thinking
@@ -114,11 +136,16 @@ Source: `~/.claude/projects/*/*.jsonl`
 | `type:"assistant"` event, `content[].type:"thinking"` | `thinking` block |
 | `type:"assistant"` event, `content[].type:"text"` | `text` block |
 | `type:"assistant"` event, `content[].type:"tool_use"` | `tool_use` block |
-| `type:"user"` event with `tool_result` content | Split to `role:"tool"` message; `tool_use_id` → `toolUseId`; `is_error` → `isError` |
+| `type:"user"` event with `tool_result` content | Split to `role:"tool"` message; `tool_use_id` → `toolUseId`; `is_error` → `isError`; `tool_result.content` (string or block array) → `result` verbatim |
 | `type:"user"` event without `tool_result` | `role:"user"` message |
+| `type:"user"` event, `content[].type:"image"` | `image` block; `source` verbatim |
+| `type:"system"` record with text content | `role:"system"` message, `text` block |
 | `message.model` | `model` field |
 | `stop_reason` | `stopReason` field |
 | `parentUuid` | `parentId` |
+
+Serialization reverses each row (`result` → `tool_result.content`, `image` →
+native `image`, `role:"system"` → native `type:"system"` record).
 
 ### Codex CLI
 
@@ -129,9 +156,17 @@ Source: `~/.codex/sessions/*/*/*/*/*.jsonl`
 | `response_item` with `payload.type:"message"`, `role:"user"` | `role:"user"` message; `input_text` blocks → `text` blocks |
 | `response_item` with `payload.type:"message"`, `role:"assistant"` | `role:"assistant"` message; `output_text` → `text` blocks |
 | `response_item` with `payload.type:"function_call"` | `tool_use` block appended to preceding assistant message; `arguments` (JSON string) → `input` (parsed object) |
-| `response_item` with `payload.type:"function_call_output"` | `role:"tool"` message; `call_id` → `toolUseId`; `name` from matched function_call; `output` → `text` block |
+| `response_item` with `payload.type:"custom_tool_call"` | `tool_use` block appended to preceding assistant message; `input` (JSON string) → parsed object; unparseable → `{"raw": <string>}` |
+| `response_item` with `payload.type:"function_call_output"` | `role:"tool"` message; `call_id` → `toolUseId`; `name` from matched function_call; `output` → string `result` |
+| `response_item` with `payload.type:"custom_tool_call_output"` | `role:"tool"` message; `call_id` → `toolUseId`; `name` from matched custom_tool_call; `output` → string `result` |
+| `response_item` with `payload.type:"reasoning"` | `thinking` block; summary text → `text` (may be empty); `encrypted_content` → `signature` |
+| `response_item` with `payload.type:"message"`, `role:"developer"` | `role:"system"` message; `input_text` blocks → `text` blocks |
 | `ordinal` | Ordering tiebreak; not mapped to `parentId` (derive from sequence) |
 | `session_meta.source.subagent` | `isSubagent` |
+
+When serializing a `tool_use` block, the choice between a `function_call` and
+a `custom_tool_call` record is provider-implementation-defined (name-based).
+The spec requires only that a same-provider round-trip preserves it.
 
 ### Gemini CLI
 
@@ -154,7 +189,9 @@ Source: `~/.pi/agent/sessions/*/*.jsonl`
 | `message.role:"assistant"`, `content[].type:"thinking"` | `thinking` block; `thinkingSignature` → `signature` |
 | `message.role:"assistant"`, `content[].type:"toolCall"` | `tool_use` block; `toolCallId` → `id`; `toolName` → `name` |
 | `message.role:"assistant"`, `content[].type:"text"` | `text` block |
-| `message.role:"toolResult"` | `role:"tool"` message; `toolCallId` → `toolUseId`; `toolName` → `toolName`; `isError` → `isError` |
+| `message.role:"assistant"`, `stopReason` | `stopReason` verbatim in both directions (no vocabulary mapping) |
+| `toolCall.arguments` (object) | `tool_use.input` (object) |
+| `message.role:"toolResult"` | `role:"tool"` message; `toolCallId` → `toolUseId`; `toolName` → `toolName`; `isError` → `isError`; content block array → `result` verbatim |
 | `message.role:"user"` | `role:"user"` message |
 | `parentId` | `parentId` (direct mapping) |
 
@@ -168,7 +205,7 @@ Source: `~/.local/share/opencode/project/*/storage/session/`
 | `message.role:"assistant"` | `role:"assistant"` message |
 | `part.type:"text"` | `text` block |
 | `part.type:"step-start"` | `tool_use` block (id = part id, name = "step", input = {}) |
-| `part.type:"step-finish"` | `role:"tool"` message; content = `text` block with token summary |
+| `part.type:"step-finish"` | `role:"tool"` message; `result` = string token summary |
 | `part.type:"patch"` | `tool_use` block (name = "patch", input = {hash, files}) |
 | `parentID` (non-empty) | `isSubagent` |
 
@@ -185,7 +222,8 @@ replay. The full transcript is the golden standard and is never mutated.
    via the offload path, not the inline view.
 2. **Tool result routing**: Partition `role:"tool"` messages by `toolName`:
    - Inline list (configurable, e.g. `["cave"]`): Keep in view; content
-     summarized to first/last 2 lines + pointer to full output.
+     summarized to first/last 2 lines + pointer to full output. The view
+     builder derives the text from `result`.
    - Everything else: Remove from view entirely; write full content to
      offload file.
 3. **Turn folding**: A turn boundary is a `role:"user"` message. Within each

@@ -1,0 +1,22 @@
+{
+  "reason": "image blocks are allowed only in user messages",
+  "session": {
+    "id": "sess-image-on-assistant",
+    "provider": "claude",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "image",
+            "source": {
+              "type": "url",
+              "url": "x"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

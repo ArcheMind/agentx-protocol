@@ -12,7 +12,12 @@
       "id": "m1",
       "parentId": null,
       "role": "user",
-      "content": [{ "type": "text", "text": "fix the failing test" }],
+      "content": [
+        {
+          "type": "text",
+          "text": "fix the failing test"
+        }
+      ],
       "timestamp": "2026-09-20T05:00:00.000000000Z"
     },
     {
@@ -22,9 +27,23 @@
       "model": "claude-fable-5",
       "stopReason": "tool_use",
       "content": [
-        { "type": "thinking", "text": "look at the test first", "signature": "sig-abc" },
-        { "type": "text", "text": "Running the suite." },
-        { "type": "tool_use", "id": "tu1", "name": "Bash", "input": { "command": "make test" } }
+        {
+          "type": "thinking",
+          "text": "look at the test first",
+          "signature": "sig-abc"
+        },
+        {
+          "type": "text",
+          "text": "Running the suite."
+        },
+        {
+          "type": "tool_use",
+          "id": "tu1",
+          "name": "Bash",
+          "input": {
+            "command": "make test"
+          }
+        }
       ]
     },
     {
@@ -34,13 +53,18 @@
       "toolUseId": "tu1",
       "toolName": "Bash",
       "isError": true,
-      "content": [{ "type": "text", "text": "1 test failed" }]
+      "result": "1 test failed"
     },
     {
       "id": "m4",
       "parentId": "m3",
       "role": "assistant",
-      "content": [{ "type": "text", "text": "Fixed." }]
+      "content": [
+        {
+          "type": "text",
+          "text": "Fixed."
+        }
+      ]
     }
   ]
 }

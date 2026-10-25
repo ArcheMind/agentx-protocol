@@ -4,6 +4,7 @@
 package transcript
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -12,10 +13,12 @@ const (
 	RoleUser      = "user"
 	RoleAssistant = "assistant"
 	RoleTool      = "tool"
+	RoleSystem    = "system"
 
 	BlockText     = "text"
 	BlockThinking = "thinking"
 	BlockToolUse  = "tool_use"
+	BlockImage    = "image"
 )
 
 type ContentBlock struct {
@@ -25,19 +28,39 @@ type ContentBlock struct {
 	ID        string `json:"id,omitempty" yaml:"id,omitempty"`
 	Name      string `json:"name,omitempty" yaml:"name,omitempty"`
 	Input     any    `json:"input,omitempty" yaml:"input,omitempty"`
+	Source    any    `json:"source,omitempty" yaml:"source,omitempty"`
 }
 
 type Message struct {
 	ID         string         `json:"id" yaml:"id"`
 	ParentID   string         `json:"parentId,omitempty" yaml:"parentId,omitempty"`
 	Role       string         `json:"role" yaml:"role"`
-	Content    []ContentBlock `json:"content" yaml:"content"`
+	Content    []ContentBlock `json:"content,omitempty" yaml:"content,omitempty"`
+	Result     any            `json:"result,omitempty" yaml:"result,omitempty"`
 	Timestamp  string         `json:"timestamp,omitempty" yaml:"timestamp,omitempty"`
 	Model      string         `json:"model,omitempty" yaml:"model,omitempty"`
 	StopReason string         `json:"stopReason,omitempty" yaml:"stopReason,omitempty"`
 	ToolUseID  string         `json:"toolUseId,omitempty" yaml:"toolUseId,omitempty"`
 	ToolName   string         `json:"toolName,omitempty" yaml:"toolName,omitempty"`
 	IsError    bool           `json:"isError,omitempty" yaml:"isError,omitempty"`
+}
+
+// MarshalJSON keeps `content` present (possibly empty) on every role except
+// tool, where the schema forbids it; omitempty alone would drop empty arrays.
+func (m Message) MarshalJSON() ([]byte, error) {
+	type plain Message
+	if m.Role == RoleTool {
+		return json.Marshal(plain(m))
+	}
+	content := m.Content
+	if content == nil {
+		content = []ContentBlock{}
+	}
+	m.Content = nil
+	return json.Marshal(struct {
+		plain
+		Content []ContentBlock `json:"content"`
+	}{plain(m), content})
 }
 
 type Session struct {
@@ -93,7 +116,16 @@ func ValidateMessage(message Message) error {
 		errs = append(errs, errors.New("id must be non-empty"))
 	}
 	switch message.Role {
-	case RoleUser, RoleTool:
+	case RoleUser:
+		if message.Model != "" || message.StopReason != "" {
+			errs = append(errs, fmt.Errorf("role %q must not carry model/stopReason", message.Role))
+		}
+		for i, block := range message.Content {
+			if block.Type != BlockText && block.Type != BlockImage {
+				errs = append(errs, fmt.Errorf("content[%d]: role %q allows only text/image blocks, got %q", i, message.Role, block.Type))
+			}
+		}
+	case RoleSystem:
 		if message.Model != "" || message.StopReason != "" {
 			errs = append(errs, fmt.Errorf("role %q must not carry model/stopReason", message.Role))
 		}
@@ -102,24 +134,24 @@ func ValidateMessage(message Message) error {
 				errs = append(errs, fmt.Errorf("content[%d]: role %q allows only text blocks, got %q", i, message.Role, block.Type))
 			}
 		}
+	case RoleTool:
+		if message.Model != "" || message.StopReason != "" {
+			errs = append(errs, fmt.Errorf("role %q must not carry model/stopReason", message.Role))
+		}
+		if len(message.Content) > 0 {
+			errs = append(errs, errors.New("tool message must not carry content; use result"))
+		}
 	case RoleAssistant:
+		for i, block := range message.Content {
+			if block.Type == BlockImage {
+				errs = append(errs, fmt.Errorf("content[%d]: role %q does not allow image blocks", i, message.Role))
+			}
+		}
 	default:
 		errs = append(errs, fmt.Errorf("unknown role %q", message.Role))
 	}
-	if message.Role == RoleTool {
-		if message.ToolUseID == "" {
-			errs = append(errs, errors.New("tool message requires toolUseId"))
-		}
-		if message.ToolName == "" {
-			errs = append(errs, errors.New("tool message requires toolName"))
-		}
-	} else {
-		if message.ToolUseID != "" || message.ToolName != "" {
-			errs = append(errs, fmt.Errorf("role %q must not carry toolUseId/toolName", message.Role))
-		}
-		if message.IsError {
-			errs = append(errs, fmt.Errorf("role %q must not carry isError", message.Role))
-		}
+	if message.Role != RoleTool && message.Result != nil {
+		errs = append(errs, fmt.Errorf("role %q must not carry result", message.Role))
 	}
 	for i, block := range message.Content {
 		if err := validateBlock(block); err != nil {
@@ -132,19 +164,30 @@ func ValidateMessage(message Message) error {
 func validateBlock(block ContentBlock) error {
 	switch block.Type {
 	case BlockText, BlockThinking:
-		if block.ID != "" || block.Name != "" || block.Input != nil {
-			return fmt.Errorf("%s block must not carry id/name/input", block.Type)
+		if block.ID != "" || block.Name != "" || block.Input != nil || block.Source != nil {
+			return fmt.Errorf("%s block must not carry id/name/input/source", block.Type)
 		}
 		if block.Type == BlockText && block.Signature != "" {
 			return errors.New("text block must not carry signature")
+		}
+		return nil
+	case BlockImage:
+		if block.Source == nil {
+			return errors.New("image block requires source")
+		}
+		if _, ok := block.Source.(map[string]any); !ok {
+			return errors.New("image source must be an object")
+		}
+		if block.Text != "" || block.Signature != "" || block.ID != "" || block.Name != "" || block.Input != nil {
+			return errors.New("image block must not carry text/signature/id/name/input")
 		}
 		return nil
 	case BlockToolUse:
 		if block.ID == "" || block.Name == "" {
 			return errors.New("tool_use block requires id and name")
 		}
-		if block.Text != "" || block.Signature != "" {
-			return errors.New("tool_use block must not carry text/signature")
+		if block.Text != "" || block.Signature != "" || block.Source != nil {
+			return errors.New("tool_use block must not carry text/signature/source")
 		}
 		if block.Input != nil {
 			if _, ok := block.Input.(map[string]any); !ok {

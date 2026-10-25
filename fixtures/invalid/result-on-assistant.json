@@ -1,0 +1,20 @@
+{
+  "reason": "result is forbidden on assistant messages",
+  "session": {
+    "id": "sess-result-on-assistant",
+    "provider": "claude",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "assistant",
+        "result": "stray",
+        "content": [
+          {
+            "type": "text",
+            "text": "hi"
+          }
+        ]
+      }
+    ]
+  }
+}

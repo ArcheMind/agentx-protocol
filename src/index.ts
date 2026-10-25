@@ -20,7 +20,13 @@ export interface ToolUseBlock {
   input?: Record<string, unknown>;
 }
 
-export type ContentBlock = TextBlock | ThinkingBlock | ToolUseBlock;
+export interface ImageBlock {
+  type: "image";
+  // Provider-native image descriptor, carried verbatim.
+  source: Record<string, unknown>;
+}
+
+export type ContentBlock = TextBlock | ImageBlock | ThinkingBlock | ToolUseBlock;
 
 interface MessageBase {
   id: string;
@@ -30,6 +36,11 @@ interface MessageBase {
 
 export interface UserMessage extends MessageBase {
   role: "user";
+  content: (TextBlock | ImageBlock)[];
+}
+
+export interface SystemMessage extends MessageBase {
+  role: "system";
   content: TextBlock[];
 }
 
@@ -42,13 +53,14 @@ export interface AssistantMessage extends MessageBase {
 
 export interface ToolMessage extends MessageBase {
   role: "tool";
-  content: TextBlock[];
+  // Provider output value carried verbatim; absent means empty output.
+  result?: unknown;
   toolUseId: string;
   toolName: string;
   isError?: boolean;
 }
 
-export type Message = UserMessage | AssistantMessage | ToolMessage;
+export type Message = UserMessage | AssistantMessage | ToolMessage | SystemMessage;
 
 export interface Session {
   id: string;
@@ -112,12 +124,14 @@ export function validateMessage(value: unknown): string[] {
     problems.push("timestamp must be a string");
   }
   const role = value.role;
-  if (role !== "user" && role !== "assistant" && role !== "tool") {
+  if (role !== "user" && role !== "assistant" && role !== "tool" && role !== "system") {
     problems.push(`unknown role ${JSON.stringify(role)}`);
     return problems;
   }
   const content = value.content;
-  if (!Array.isArray(content)) {
+  if (role === "tool") {
+    if (content !== undefined) problems.push("tool message must not carry content; use result");
+  } else if (!Array.isArray(content)) {
     problems.push("content must be an array");
   } else {
     content.forEach((block, index) => {
@@ -130,6 +144,7 @@ export function validateMessage(value: unknown): string[] {
   } else if (value.model !== undefined || value.stopReason !== undefined) {
     problems.push(`role "${role}" must not carry model/stopReason`);
   }
+  if (role !== "tool" && value.result !== undefined) problems.push(`role "${role}" must not carry result`);
   if (role === "tool") {
     if (!isNonEmptyString(value.toolUseId)) problems.push("tool message requires toolUseId");
     if (!isNonEmptyString(value.toolName)) problems.push("tool message requires toolName");
@@ -143,13 +158,18 @@ export function validateMessage(value: unknown): string[] {
   return problems;
 }
 
-function validateBlock(value: unknown, role: "user" | "assistant" | "tool"): string[] {
+function validateBlock(value: unknown, role: "user" | "assistant" | "system"): string[] {
   if (!isRecord(value)) return ["must be an object"];
   const problems: string[] = [];
   switch (value.type) {
     case "text":
       if (typeof value.text !== "string") problems.push("text block requires text string");
       forbidKeys(value, ["type", "text"], problems);
+      break;
+    case "image":
+      if (role !== "user") problems.push(`role "${role}" does not allow image blocks`);
+      if (!isRecord(value.source)) problems.push("image block requires source object");
+      forbidKeys(value, ["type", "source"], problems);
       break;
     case "thinking":
       if (role !== "assistant") problems.push(`role "${role}" allows only text blocks, got "thinking"`);
@@ -177,11 +197,12 @@ function forbidKeys(value: Record<string, unknown>, allowed: string[], problems:
 }
 
 export const isTextBlock = (block: ContentBlock): block is TextBlock => block.type === "text";
+export const isImageBlock = (block: ContentBlock): block is ImageBlock => block.type === "image";
 export const isThinkingBlock = (block: ContentBlock): block is ThinkingBlock => block.type === "thinking";
 export const isToolUseBlock = (block: ContentBlock): block is ToolUseBlock => block.type === "tool_use";
 
 export const textContent = (message: Message): string =>
-  (message.content as ContentBlock[])
+  (message.role === "tool" ? [] : (message.content as ContentBlock[]))
     .filter(isTextBlock)
     .map((block) => block.text)
     .join("\n");
