@@ -52,7 +52,7 @@ export type Message = UserMessage | AssistantMessage | ToolMessage;
 
 export interface Session {
   id: string;
-  provider: string;
+  agent: string;
   isSubagent?: boolean;
   workspace?: string;
   title?: string;
@@ -78,7 +78,7 @@ export function validateSession(value: unknown): string[] {
   if (!isRecord(value)) return ["session: must be an object"];
   const problems: string[] = [];
   if (!isNonEmptyString(value.id)) problems.push("session: id must be a non-empty string");
-  if (!isNonEmptyString(value.provider)) problems.push("session: provider must be a non-empty string");
+  if (!isNonEmptyString(value.agent)) problems.push("session: agent must be a non-empty string");
   if (!Array.isArray(value.messages)) {
     problems.push("session: messages must be an array");
   } else {

@@ -3,10 +3,10 @@
   "$id": "https://github.com/ArcheMind/agentx-protocol/schema/unified-transcript.schema.json",
   "title": "AgentX Unified Transcript",
   "type": "object",
-  "required": ["id", "provider", "messages"],
+  "required": ["id", "agent", "messages"],
   "properties": {
     "id": { "type": "string", "minLength": 1 },
-    "provider": { "type": "string", "minLength": 1 },
+    "agent": { "type": "string", "minLength": 1 },
     "isSubagent": { "type": "boolean", "default": false },
     "workspace": { "type": "string" },
     "title": { "type": "string" },

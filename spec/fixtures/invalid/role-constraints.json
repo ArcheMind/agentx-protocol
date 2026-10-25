@@ -2,7 +2,7 @@
   "reason": "role-level constraints: tool without toolUseId/toolName, user with tool_use block, isError outside tool, model on tool",
   "session": {
     "id": "sess-roles",
-    "provider": "claude",
+    "agent": "claude",
     "messages": [
       {
         "id": "m1",

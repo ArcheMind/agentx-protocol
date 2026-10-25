@@ -1,6 +1,6 @@
 {
   "id": "sess-claude-1",
-  "provider": "claude",
+  "agent": "claude",
   "workspace": "/tmp/demo",
   "title": "fix the failing test",
   "startedAt": "2026-09-20T05:00:00.000000000Z",

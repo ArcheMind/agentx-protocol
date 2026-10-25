@@ -1,7 +1,7 @@
 # Unified Transcript Format
 
 The unified transcript format normalizes agent conversation histories from
-multiple providers into a single structured shape. This repository is the
+multiple agents into a single structured shape. This repository is the
 protocol's home: the specification (this document), the machine-readable
 JSON Schema, and the reference implementations.
 
@@ -20,7 +20,7 @@ one commit — then consumers upgrade their pinned version.
 ```json
 {
   "id": "string",
-  "provider": "string (e.g. claude | codex | gemini | opencode | pi)",
+  "agent": "string (e.g. claude | codex | gemini | opencode | pi)",
   "isSubagent": false,
   "workspace": "/absolute/path",
   "title": "first user intent (≤96 chars)",
@@ -103,7 +103,7 @@ Tool invocation request. Always inside an `assistant` message.
 }
 ```
 
-## Provider normalization rules
+## Agent normalization rules
 
 ### Claude Code
 

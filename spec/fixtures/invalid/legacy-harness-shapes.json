@@ -2,7 +2,7 @@
   "reason": "legacy chill-harness shapes must be rejected: string assistant content, tool-call block, embedded tool-result block",
   "session": {
     "id": "sess-legacy",
-    "provider": "someone-harness",
+    "agent": "someone-harness",
     "messages": [
       {
         "id": "m1",

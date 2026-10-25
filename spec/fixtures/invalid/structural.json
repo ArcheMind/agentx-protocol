@@ -2,7 +2,7 @@
   "reason": "structural: duplicate message ids, missing id, unknown role, unknown block type, tool_use without id",
   "session": {
     "id": "sess-structural",
-    "provider": "codex",
+    "agent": "codex",
     "messages": [
       {
         "id": "dup",

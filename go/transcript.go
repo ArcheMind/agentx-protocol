@@ -42,7 +42,7 @@ type Message struct {
 
 type Session struct {
 	ID           string    `json:"id" yaml:"id"`
-	Provider     string    `json:"provider" yaml:"provider"`
+	Agent        string    `json:"agent" yaml:"agent"`
 	IsSubagent   bool      `json:"isSubagent,omitempty" yaml:"isSubagent,omitempty"`
 	Workspace    string    `json:"workspace,omitempty" yaml:"workspace,omitempty"`
 	Title        string    `json:"title,omitempty" yaml:"title,omitempty"`
@@ -61,8 +61,8 @@ func ValidateSession(session Session) error {
 	if session.ID == "" {
 		errs = append(errs, errors.New("session: id must be non-empty"))
 	}
-	if session.Provider == "" {
-		errs = append(errs, errors.New("session: provider must be non-empty"))
+	if session.Agent == "" {
+		errs = append(errs, errors.New("session: agent must be non-empty"))
 	}
 	if err := ValidateMessages(session.Messages); err != nil {
 		errs = append(errs, err)
